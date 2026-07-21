@@ -1,0 +1,5 @@
+{% load static %}
+<a class="card card-link" href="{% url 'products:detail' product.public_id %}" aria-label="{{ product.name }} 상세 보기">
+  {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% elif product.sample_image_path %}<img src="{% static product.sample_image_path %}" alt="{{ product.name }} 상품 이미지">{% else %}<div class="placeholder sample-placeholder"><strong>{{ product.get_category_display }}</strong><span>{{ product.name }}</span></div>{% endif %}
+  <div class="card-body"><div class="badge-row"><span class="badge category-badge">{{ product.get_category_display }}</span><span class="badge">{{ product.get_sale_status_display }}</span></div><h3>{{ product.name }}</h3><p class="price">{{ product.price }} P</p><p>{{ product.seller.username }}</p></div>
+</a>

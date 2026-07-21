@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<section class="form-panel product-form-panel">
+  <h1>{{ title }}</h1>
+  <p>이미지를 선택하면 저장하기 전에 아래에서 미리 확인할 수 있습니다.</p>
+  <div id="image-preview-box" class="image-preview-box{% if not form.instance.image %} empty{% endif %}">
+    <img id="image-preview" {% if form.instance.image %}src="{{ form.instance.image.url }}" alt="현재 상품 이미지"{% else %}alt="선택한 상품 이미지 미리보기" hidden{% endif %}>
+    <span id="image-preview-empty" {% if form.instance.image %}hidden{% endif %}>선택된 이미지가 없습니다.</span>
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>저장</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+const imageInput = document.querySelector('#id_image');
+const preview = document.querySelector('#image-preview');
+const previewBox = document.querySelector('#image-preview-box');
+const emptyText = document.querySelector('#image-preview-empty');
+let previewUrl = null;
+if (imageInput) {
+  imageInput.addEventListener('change', () => {
+    const file = imageInput.files && imageInput.files[0];
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (!file) {
+      preview.hidden = true;
+      emptyText.hidden = false;
+      previewBox.classList.add('empty');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      preview.hidden = true;
+      emptyText.textContent = '이미지 파일을 선택해 주세요.';
+      emptyText.hidden = false;
+      previewBox.classList.add('empty');
+      return;
+    }
+    previewUrl = URL.createObjectURL(file);
+    preview.src = previewUrl;
+    preview.hidden = false;
+    emptyText.hidden = true;
+    previewBox.classList.remove('empty');
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}사용자 검색{% endblock %}
+{% block content %}
+<div class="section-title"><div><p class="eyebrow">FIND SELLERS</p><h1>사용자 검색</h1></div><span class="result-count">최대 50명 표시</span></div>
+<form method="get" class="search user-search-form">
+  <label class="sr-only" for="user-query">사용자 이름 또는 소개글 검색</label>
+  <input id="user-query" name="q" maxlength="150" value="{{ query }}" placeholder="사용자 이름 또는 소개글을 입력하세요">
+  <button>검색</button>
+</form>
+<div class="user-result-grid">
+  {% for profile in users %}
+    <a class="user-result-card" href="{% url 'accounts:profile' profile.public_id %}" aria-label="{{ profile.username }} 프로필 보기">
+      {% if profile.avatar %}<img src="{{ profile.avatar.url }}" alt="{{ profile.username }} 프로필 사진">{% else %}<img src="{% static 'images/profiles/default-avatar.png' %}" alt="기본 프로필 사진">{% endif %}
+      <div><h2>{{ profile.username }}</h2><p>{{ profile.bio|default:"소개글이 없습니다."|truncatechars:90 }}</p><div class="user-result-stats"><span>거래 중 {{ profile.active_product_count }}</span><span>거래 완료 {{ profile.completed_product_count }}</span></div></div>
+    </a>
+  {% empty %}<p class="empty-state">조건에 맞는 사용자가 없습니다.</p>{% endfor %}
+</div>
+{% endblock %}

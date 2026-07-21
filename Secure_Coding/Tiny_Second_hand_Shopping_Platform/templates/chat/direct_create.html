@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block title %}1:1 채팅 시작{% endblock %}{% block content %}<section class="form-panel"><h1>1:1 채팅 시작</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button>채팅방 열기</button></form></section>{% endblock %}

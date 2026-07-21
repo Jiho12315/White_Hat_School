@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}마이페이지{% endblock %}
+{% block content %}
+<div class="section-title"><div><p class="eyebrow">MY TINY MARKET</p><h1>마이페이지</h1></div></div>
+
+<div class="mypage-layout" data-active-section="{{ active_section }}">
+  <div class="mypage-content">
+    <section id="mypage-overview" class="mypage-tab-panel mypage-profile-home" data-section="overview" aria-labelledby="tab-overview">
+      <header class="profile-hero">
+        {% if user.avatar %}<img class="profile-avatar" src="{{ user.avatar.url }}" alt="{{ user.username }} 프로필 사진">{% else %}<img class="profile-avatar" src="{% static 'images/profiles/default-avatar.png' %}" alt="기본 프로필 사진">{% endif %}
+        <div class="profile-identity"><p class="eyebrow">MY SELLER PROFILE</p><h1>{{ user.username }}</h1><p class="prewrap">{{ user.bio|default:"소개글이 없습니다. MY MENU에서 프로필을 변경해보세요." }}</p></div>
+      </header>
+      <div class="profile-stats">
+        <div><span>현재 거래 중</span><strong>{{ active_product_count }}</strong><small>개 상품</small></div>
+        <div><span>거래 완료</span><strong>{{ completed_count }}</strong><small>개 상품</small></div>
+        <div class="profile-category-stat"><span>거래 중인 물품 종류</span><div class="profile-category-list">{% for item in category_summary %}<span class="badge category-badge">{{ item.label }} {{ item.count }}</span>{% empty %}<small>현재 거래 중인 상품이 없습니다.</small>{% endfor %}</div></div>
+      </div>
+      <section class="profile-products"><div class="section-title"><h2>현재 거래 중인 물품</h2>{% if completed_count %}<a class="button secondary" href="{% url 'accounts:completed_products' user.public_id %}">거래 완료 내역 확인</a>{% endif %}</div><div class="grid my-products-grid">{% for product in active_products %}{% include "products/_card.html" %}{% empty %}<p class="empty-state">현재 거래 중인 상품이 없습니다.</p>{% endfor %}</div></section>
+    </section>
+
+    <section id="mypage-products" class="mypage-panel mypage-tab-panel" data-section="products" aria-labelledby="tab-products">
+      <div class="section-title"><h2>내가 올린 물품</h2><a href="{% url 'products:create' %}">새 상품 등록</a></div>
+      <div class="grid my-products-grid">
+        {% for product in my_products %}{% include "products/_card.html" %}
+        {% empty %}<p class="empty-state">등록한 상품이 없습니다.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section id="mypage-chats" class="mypage-panel mypage-tab-panel" data-section="chats" aria-labelledby="tab-chats">
+      <div class="section-title"><h2>1:1 채팅 내역</h2><a href="{% url 'chat:direct_create' %}">새 채팅</a></div>
+      <div class="chat-history-list">
+        {% for room in chat_rooms %}
+          <a class="chat-history-item" href="{% url 'chat:room' room.public_id %}">
+            <div><strong>{% for participant in room.participants.all %}{% if participant != user %}{{ participant.username }}{% endif %}{% endfor %}</strong><span>님과의 대화</span></div>
+            <p>{% if room.last_message_content %}{{ room.last_message_content|truncatechars:70 }}{% else %}아직 메시지가 없습니다.{% endif %}</p>
+            {% if room.last_message_at %}<time datetime="{{ room.last_message_at|date:'c' }}">{{ room.last_message_at|date:"Y-m-d H:i" }}</time>{% endif %}
+          </a>
+        {% empty %}<p class="empty-state">참여 중인 1:1 채팅이 없습니다.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section id="mypage-reports" class="mypage-panel mypage-tab-panel" data-section="reports" aria-labelledby="tab-reports">
+      <div class="section-title"><h2>내가 신고한 내역</h2></div>
+      <div class="report-history-list">
+        {% for report in submitted_reports %}
+          <article class="report-history-item">
+            <div>
+              <span class="badge">{{ report.get_reason_category_display }}</span>
+              <span class="badge report-status-{{ report.status|lower }}">{{ report.get_status_display }}</span>
+            </div>
+            <h3>
+              {% if report.reported_product %}<a href="{% url 'products:detail' report.reported_product.public_id %}">{{ report.reported_product.name }}</a>
+              {% elif report.reported_user %}<a href="{% url 'accounts:profile' report.reported_user.public_id %}">{{ report.reported_user.username }}</a>{% endif %}
+            </h3>
+            <p class="prewrap">{{ report.reason }}</p>
+            <time datetime="{{ report.created_at|date:'c' }}">접수일 {{ report.created_at|date:"Y-m-d H:i" }}</time>
+          </article>
+        {% empty %}<p class="empty-state">신고한 내역이 없습니다.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section id="mypage-points" class="mypage-panel mypage-tab-panel" data-section="points" aria-labelledby="tab-points">
+      <div class="point-balance-card">
+        <div><span>현재 보유 포인트</span><strong>{{ user.wallet.balance }} P</strong></div>
+        <a class="button" href="{% url 'wallets:transfer' %}">송금하기</a>
+      </div>
+      <div class="transaction-heading"><div><p class="eyebrow">POINT HISTORY</p><h3>최근 거래</h3></div><span>최근 {{ transactions|length }}건</span></div>
+      <div class="transaction-list">
+        {% for tx in transactions %}
+          <article class="transaction-item {% if tx.sender_id == user.id %}transaction-sent{% else %}transaction-received{% endif %}">
+            <div class="transaction-icon" aria-hidden="true">{% if tx.sender_id == user.id %}↑{% else %}↓{% endif %}</div>
+            <div class="transaction-info">
+              <div class="transaction-title">
+                <strong>{% if tx.sender_id == user.id %}보낸 포인트{% else %}받은 포인트{% endif %}</strong>
+                <span class="transaction-status">{{ tx.get_status_display }}</span>
+              </div>
+              <p>
+                {% if tx.sender_id == user.id %}<a href="{% url 'accounts:profile' tx.receiver.public_id %}">{{ tx.receiver.username }}</a>님에게 송금
+                {% else %}<a href="{% url 'accounts:profile' tx.sender.public_id %}">{{ tx.sender.username }}</a>님에게 받음{% endif %}
+              </p>
+              <time datetime="{{ tx.created_at|date:'c' }}">{{ tx.created_at|date:"Y년 m월 d일 H:i" }}</time>
+            </div>
+            <strong class="transaction-amount">{% if tx.sender_id == user.id %}−{% else %}+{% endif %} {{ tx.amount }} P</strong>
+          </article>
+        {% empty %}<p class="empty-state">아직 거래 내역이 없습니다.</p>{% endfor %}
+      </div>
+    </section>
+
+    <section id="mypage-profile" class="mypage-panel form-panel mypage-tab-panel" data-section="profile" aria-labelledby="tab-profile">
+      <h2>프로필</h2><form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="profile">{{ profile_form.as_p }}<button>프로필 저장</button></form>
+    </section>
+
+    <section id="mypage-password" class="mypage-panel form-panel mypage-tab-panel" data-section="password" aria-labelledby="tab-password">
+      <h2>비밀번호 변경</h2><form method="post">{% csrf_token %}<input type="hidden" name="action" value="password">{{ password_form.as_p }}<button>비밀번호 변경</button></form>
+    </section>
+  </div>
+
+  <aside class="mypage-sidebar" aria-label="마이페이지 기능">
+    <p class="mypage-sidebar-title">MY MENU</p>
+    <div class="mypage-tabs" role="tablist" aria-orientation="vertical">
+      <button id="tab-overview" type="button" role="tab" data-target="overview" aria-controls="mypage-overview">프로필 홈</button>
+      <button id="tab-products" type="button" role="tab" data-target="products" aria-controls="mypage-products">내가 올린 물품 <span>{{ my_products|length }}</span></button>
+      <button id="tab-chats" type="button" role="tab" data-target="chats" aria-controls="mypage-chats">1:1 채팅 내역 <span>{{ chat_rooms|length }}</span></button>
+      <button id="tab-reports" type="button" role="tab" data-target="reports" aria-controls="mypage-reports">신고 내역 <span>{{ submitted_reports|length }}</span></button>
+      <button id="tab-points" type="button" role="tab" data-target="points" aria-controls="mypage-points">가상 포인트</button>
+      <button id="tab-profile" type="button" role="tab" data-target="profile" aria-controls="mypage-profile">프로필 변경</button>
+      <button id="tab-password" type="button" role="tab" data-target="password" aria-controls="mypage-password">비밀번호 변경</button>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const layout = document.querySelector('.mypage-layout');
+  if (!layout) return;
+  const tabs = [...layout.querySelectorAll('[role="tab"]')];
+  const panels = [...layout.querySelectorAll('.mypage-tab-panel')];
+  layout.classList.add('mypage-tabs-enabled');
+
+  const activate = (section, focus = false) => {
+    if (!tabs.some(tab => tab.dataset.target === section)) section = 'overview';
+    tabs.forEach(tab => {
+      const selected = tab.dataset.target === section;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected && focus) tab.focus();
+    });
+    panels.forEach(panel => { panel.hidden = panel.dataset.section !== section; });
+    const url = new URL(window.location.href);
+    url.searchParams.set('section', section);
+    history.replaceState(null, '', url);
+  };
+
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activate(tab.dataset.target));
+    tab.addEventListener('keydown', event => {
+      if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      let next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + tabs.length) % tabs.length;
+      activate(tabs[next].dataset.target, true);
+    });
+  });
+  activate(layout.dataset.activeSection);
+})();
+</script>
+{% endblock %}

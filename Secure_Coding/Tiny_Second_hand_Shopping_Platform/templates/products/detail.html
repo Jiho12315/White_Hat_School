@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<article class="detail">
+  <div class="detail-media">
+    {% if product.image %}
+      <img class="detail-image" src="{{ product.image.url }}" alt="{{ product.name }}">
+    {% elif product.sample_image_path %}
+      <img class="detail-image" src="{% static product.sample_image_path %}" alt="{{ product.name }} 상품 이미지">
+    {% else %}
+      <div class="placeholder detail-image sample-placeholder"><strong>{{ product.get_category_display }}</strong><span>{{ product.name }}</span></div>
+    {% endif %}
+  </div>
+  <div class="detail-info">
+    <div class="badge-row"><span class="badge category-badge">{{ product.get_category_display }}</span><span class="badge">{{ product.get_sale_status_display }}</span></div>
+    <h1>{{ product.name }}</h1>
+    <p class="price">{{ product.price }} P</p>
+    <p class="prewrap">{{ product.description }}</p>
+    <p>판매자: <a href="{% url 'accounts:profile' product.seller.public_id %}">{{ product.seller.username }}</a></p>
+    <div class="detail-actions">
+      {% if user.is_authenticated and user != product.seller %}
+        <form method="post" action="{% url 'chat:direct_with_user' product.seller.public_id %}">{% csrf_token %}<button type="submit">판매자와 1:1 채팅</button></form>
+      {% elif not user.is_authenticated %}
+        <a class="button" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">로그인 후 판매자와 채팅</a>
+      {% endif %}
+      {% if user.is_authenticated and user != product.seller %}
+        {% if has_reported %}
+          <span class="button secondary report-complete" role="status">신고 완료</span>
+        {% else %}
+          <a class="button secondary" href="{% url 'reports:product_create' product.public_id %}">상품 신고</a>
+        {% endif %}
+      {% endif %}
+      {% if user == product.seller or user.is_staff %}
+        <a class="button" href="{% url 'products:edit' product.public_id %}">수정</a>
+        <form class="inline" method="post" action="{% url 'products:delete' product.public_id %}">{% csrf_token %}<button class="danger" onclick="return confirm('상품을 삭제할까요?')">삭제</button></form>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block title %}회원가입{% endblock %}{% block content %}<section class="form-panel"><h1>회원가입</h1><p>비밀번호는 10자 이상이며 흔하거나 숫자로만 구성할 수 없습니다.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>가입하기</button></form></section>{% endblock %}

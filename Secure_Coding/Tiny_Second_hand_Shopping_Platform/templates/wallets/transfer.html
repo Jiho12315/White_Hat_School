@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block title %}가상 포인트 송금{% endblock %}{% block content %}<section class="form-panel"><h1>가상 포인트 송금</h1><p>실제 화폐가 아닌 교육용 포인트입니다. 전송 전에 받는 사람과 금액을 확인하세요.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>송금</button></form></section>{% endblock %}

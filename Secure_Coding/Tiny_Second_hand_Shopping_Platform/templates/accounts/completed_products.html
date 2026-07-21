@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }} 거래 완료 내역{% endblock %}
+{% block content %}
+<div class="section-title"><div><p class="eyebrow">COMPLETED DEALS</p><h1>{{ profile_user.username }}의 거래 완료 내역</h1></div><a href="{% url 'accounts:profile' profile_user.public_id %}">프로필로 돌아가기</a></div>
+<div class="grid">{% for product in completed_products %}{% include "products/_card.html" %}{% empty %}<p class="empty-state">거래 완료 내역이 없습니다.</p>{% endfor %}</div>
+{% endblock %}

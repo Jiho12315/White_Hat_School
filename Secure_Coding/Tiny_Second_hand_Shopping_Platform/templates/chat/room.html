@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}채팅{% endblock %}
+{% block content %}
+<section class="chat-panel">
+  <h1>{% if room.room_type == 'GLOBAL' %}전체 채팅{% else %}1:1 채팅{% endif %}</h1>
+  <div id="messages" class="messages" aria-live="polite">
+    {% for item in messages_list %}
+      <div class="message-row {% if item.author_id == user.id %}message-mine{% else %}message-other{% endif %}" data-author-id="{{ item.author_id }}">
+        <div class="message-bubble">
+          <strong>{{ item.author.username }}</strong>
+          <span>{{ item.content }}</span>
+          <time datetime="{{ item.created_at|date:'c' }}">{{ item.created_at|date:"H:i" }}</time>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if room.room_type == 'DIRECT' and other_user %}
+    <div class="chat-transfer">
+      <button id="transfer-toggle" class="button secondary" type="button" aria-expanded="false" aria-controls="transfer-panel">{{ other_user.username }}님에게 송금하기</button>
+      <div id="transfer-panel" class="chat-transfer-panel" hidden>
+        <p><strong>{{ other_user.username }}</strong>님에게 보낼 포인트를 입력하세요.</p>
+        <form method="post" action="{% url 'chat:room_transfer' room.public_id %}" class="chat-transfer-form">
+          {% csrf_token %}
+          {{ transfer_form.idempotency_key }}
+          <label for="{{ transfer_form.amount.id_for_label }}">송금 금액</label>
+          {{ transfer_form.amount }}
+          <button type="submit">송금</button>
+        </form>
+        <small>송금이 완료되면 이 채팅방에 기록됩니다.</small>
+      </div>
+    </div>
+  {% endif %}
+  <form id="chat-form" class="chat-form">
+    <label class="sr-only" for="message-input">메시지</label>
+    <input id="message-input" maxlength="1000" autocomplete="off" required>
+    <button>전송</button>
+  </form>
+  <p id="chat-error" class="error" role="alert"></p>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const roomId = "{{ room.public_id|escapejs }}";
+  const currentUserId = "{{ user.id|escapejs }}";
+  const scheme = location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${scheme}://${location.host}/ws/chat/${roomId}/`);
+  const box = document.querySelector("#messages");
+  const error = document.querySelector("#chat-error");
+  const transferToggle = document.querySelector("#transfer-toggle");
+  const transferPanel = document.querySelector("#transfer-panel");
+
+  if (transferToggle && transferPanel) {
+    transferToggle.addEventListener("click", () => {
+      const willOpen = transferPanel.hidden;
+      transferPanel.hidden = !willOpen;
+      transferToggle.setAttribute("aria-expanded", String(willOpen));
+      if (willOpen) transferPanel.querySelector("input:not([type='hidden'])")?.focus();
+    });
+  }
+
+  const appendMessage = data => {
+    const row = document.createElement("div");
+    row.className = `message-row ${String(data.author_id) === currentUserId ? "message-mine" : "message-other"}`;
+    row.dataset.authorId = data.author_id;
+
+    const bubble = document.createElement("div");
+    bubble.className = "message-bubble";
+    const author = document.createElement("strong");
+    author.textContent = data.author;
+    const content = document.createElement("span");
+    content.textContent = data.message;
+    const time = document.createElement("time");
+    const createdAt = new Date(data.created_at);
+    time.dateTime = data.created_at;
+    time.textContent = createdAt.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+    bubble.append(author, content, time);
+    row.appendChild(bubble);
+    box.appendChild(row);
+    box.scrollTop = box.scrollHeight;
+  };
+
+  socket.onmessage = event => {
+    const data = JSON.parse(event.data);
+    if (data.error) { error.textContent = data.error; return; }
+    appendMessage(data);
+  };
+  socket.onclose = () => { error.textContent = "채팅 연결이 종료되었습니다."; };
+  document.querySelector("#chat-form").addEventListener("submit", event => {
+    event.preventDefault();
+    const input = document.querySelector("#message-input");
+    const value = input.value.trim();
+    if (value && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({message: value}));
+      input.value = "";
+      error.textContent = "";
+    }
+  });
+  box.scrollTop = box.scrollHeight;
+})();
+</script>
+{% endblock %}

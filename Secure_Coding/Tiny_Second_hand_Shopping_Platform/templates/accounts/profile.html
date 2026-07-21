@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ profile_user.username }} 프로필{% endblock %}
+{% block content %}
+<section class="public-profile">
+  <header class="profile-hero">
+    {% if profile_user.avatar %}<img class="profile-avatar" src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }} 프로필 사진">{% else %}<img class="profile-avatar" src="{% static 'images/profiles/default-avatar.png' %}" alt="기본 프로필 사진">{% endif %}
+    <div class="profile-identity"><p class="eyebrow">SELLER PROFILE</p><h1>{{ profile_user.username }}</h1><p class="prewrap">{{ profile_user.bio|default:"소개글이 없습니다." }}</p></div>
+    {% if user.is_authenticated and user != profile_user %}<div class="profile-actions"><form method="post" action="{% url 'chat:direct_with_user' profile_user.public_id %}">{% csrf_token %}<button>1:1 채팅</button></form><a class="button secondary" href="{% url 'reports:create' %}?type=user&id={{ profile_user.public_id }}">사용자 신고</a></div>{% endif %}
+  </header>
+
+  <div class="profile-stats">
+    <div><span>현재 거래 중</span><strong>{{ active_product_count }}</strong><small>개 상품</small></div>
+    <div><span>거래 완료</span><strong>{{ completed_count }}</strong><small>개 상품</small></div>
+    <div class="profile-category-stat"><span>거래 중인 물품 종류</span><div class="profile-category-list">{% for item in category_summary %}<span class="badge category-badge">{{ item.label }} {{ item.count }}</span>{% empty %}<small>현재 거래 중인 상품이 없습니다.</small>{% endfor %}</div></div>
+  </div>
+
+  <section class="profile-products"><div class="section-title"><h2>현재 거래 중인 물품</h2>{% if completed_count %}<a class="button secondary" href="{% url 'accounts:completed_products' profile_user.public_id %}">거래 완료 내역 확인</a>{% endif %}</div><div class="grid">{% for product in active_products %}{% include "products/_card.html" %}{% empty %}<p class="empty-state">현재 거래 중인 상품이 없습니다.</p>{% endfor %}</div></section>
+</section>
+{% endblock %}
