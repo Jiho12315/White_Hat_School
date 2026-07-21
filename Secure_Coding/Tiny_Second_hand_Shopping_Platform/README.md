@@ -1,9 +1,5 @@
 # Tiny Second-hand Shopping Platform
 
-보안을 중심으로 설계한 교육용 소규모 중고거래 웹 플랫폼입니다. 회원, 상품, 1:1 채팅, 상품 신고·자동 검토, 채팅 기반 가상 포인트 송금, 검색, 관리자·감사 로그 기능을 제공합니다.
-
-> 송금 기능은 실제 금융 거래가 아닌 교육용 가상 포인트 이동입니다.
-
 ## 주요 기능
 
 - 회원가입, 로그인·로그아웃, 공개 프로필, 마이페이지, 비밀번호 변경
@@ -20,8 +16,6 @@
 - 개발 DB: SQLite
 - 검증·운영 DB: PostgreSQL 권장
 - 운영 채널 계층: Redis 권장
-
-현재 저장소 기본 설정은 로컬 개발 편의를 위해 SQLite와 인메모리 WebSocket 채널 계층을 사용합니다. 송금 동시성 및 다중 프로세스 채팅 운영에는 각각 PostgreSQL과 Redis 설정이 필요합니다.
 
 ## 설치
 
@@ -110,14 +104,3 @@ python manage.py check --deploy
 - 신고 중복 DB 제약과 송금 중복방지키·트랜잭션·지갑 행 잠금
 - 관리자 상태 변경, 자동 제재, 송금 감사 로그
 - 운영용 Secure/HttpOnly/SameSite 쿠키, HTTPS/WSS, HSTS 설정 지원
-
-## 문서
-
-- [요구사항 분석](docs/requirements-analysis.md)
-- [시스템 설계](docs/system-design.md)
-- [보안 및 테스트 보고서](docs/security-test-report.md)
-- [수동 테스트 유즈케이스](docs/use-cases.md)
-
-## 공개 저장소 주의사항
-
-`.env`, SQLite DB, 업로드 이미지, 로그, 캐시 파일은 `.gitignore`로 제외합니다. 공개 전 `git status`에서 비밀정보와 개인정보가 포함되지 않았는지 다시 확인하십시오.
